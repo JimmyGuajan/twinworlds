@@ -1,0 +1,305 @@
+{
+ "_about": "Planetary target sites. Each value is a 0-1 score on the SAME axis used for Earth sites. Physical planetary values are projected onto Earth's attainable range and saturate at 1 (e.g. lunar vacuum -> thin_air = 1). 'facts' and 'sources' document the NASA/agency datasets that justify each profile.",
+ "targets": [
+  {
+   "id": "moon_shackleton",
+   "body": "Moon",
+   "name": "Shackleton – de Gerlache ridge (Artemis south pole)",
+   "lat": -89.45,
+   "lon": -137.0,
+   "aridity": 1,
+   "cold": 1,
+   "swing": 0.8,
+   "thin_air": 1,
+   "radiation": 1,
+   "light": 1,
+   "basalt": 0.2,
+   "regolith": 1,
+   "ice": 0.9,
+   "impact": 1,
+   "caves": 0.05,
+   "salts": 0,
+   "sediment": 0,
+   "barren": 1,
+   "relief": 0.9,
+   "facts": [
+    "Illuminated up to ~80-90% of the year on ridge peaks (LOLA)",
+    "Permanently shadowed craters < 40 K (Diviner)",
+    "Water-ice signatures in PSRs (LRO LAMP, LCROSS, M3)",
+    "Anorthositic highland regolith, slopes 10-30° (LOLA)"
+   ],
+   "sources": [
+    "LRO LOLA",
+    "LRO Diviner",
+    "LRO LAMP",
+    "LCROSS",
+    "Chandrayaan-1 M3"
+   ]
+  },
+  {
+   "id": "moon_malapert",
+   "body": "Moon",
+   "name": "Malapert Massif (Artemis III candidate)",
+   "lat": -85.99,
+   "lon": -2.93,
+   "aridity": 1,
+   "cold": 0.9,
+   "swing": 0.9,
+   "thin_air": 1,
+   "radiation": 1,
+   "light": 0.95,
+   "basalt": 0.15,
+   "regolith": 1,
+   "ice": 0.6,
+   "impact": 0.9,
+   "caves": 0.0,
+   "salts": 0,
+   "sediment": 0,
+   "barren": 1,
+   "relief": 1,
+   "facts": [
+    "~5 km high massif with continuous Earth visibility",
+    "High illumination fraction near the summit",
+    "Close to cold traps with possible ice"
+   ],
+   "sources": [
+    "LRO LOLA",
+    "LRO NAC",
+    "LRO Diviner"
+   ]
+  },
+  {
+   "id": "moon_tranquillitatis_pit",
+   "body": "Moon",
+   "name": "Mare Tranquillitatis pit (radar-confirmed cave)",
+   "lat": 8.335,
+   "lon": 33.222,
+   "aridity": 1,
+   "cold": 0.55,
+   "swing": 1,
+   "thin_air": 1,
+   "radiation": 1,
+   "light": 0.7,
+   "basalt": 1,
+   "regolith": 1,
+   "ice": 0,
+   "impact": 0.6,
+   "caves": 1,
+   "salts": 0,
+   "sediment": 0,
+   "barren": 1,
+   "relief": 0.5,
+   "facts": [
+    "~100 m pit with conduit confirmed by Mini-RF radar (2024)",
+    "Cave floor stays near ~17 °C while surface swings -170/+120 °C (Diviner)",
+    "Natural radiation and micrometeoroid shield for a base"
+   ],
+   "sources": [
+    "LRO Mini-RF",
+    "LRO Diviner",
+    "LRO NAC",
+    "Kaguya TC"
+   ]
+  },
+  {
+   "id": "mars_jezero",
+   "body": "Mars",
+   "name": "Jezero Crater (Perseverance)",
+   "lat": 18.38,
+   "lon": 77.58,
+   "aridity": 1,
+   "cold": 1,
+   "swing": 1,
+   "thin_air": 1,
+   "radiation": 1,
+   "light": 0.35,
+   "basalt": 0.7,
+   "regolith": 0.8,
+   "ice": 0.05,
+   "impact": 1,
+   "caves": 0.05,
+   "salts": 0.6,
+   "sediment": 1,
+   "barren": 1,
+   "relief": 0.5,
+   "facts": [
+    "Ancient lake with river delta (CTX/HiRISE)",
+    "Carbonates and clays (CRISM)",
+    "Mean T ≈ -60 °C, P ≈ 0.6 kPa (MEDA)"
+   ],
+   "sources": [
+    "MRO CRISM",
+    "MRO HiRISE",
+    "MRO CTX",
+    "Perseverance MEDA"
+   ]
+  },
+  {
+   "id": "mars_gale",
+   "body": "Mars",
+   "name": "Gale Crater – Mount Sharp (Curiosity)",
+   "lat": -5.4,
+   "lon": 137.8,
+   "aridity": 1,
+   "cold": 1,
+   "swing": 1,
+   "thin_air": 1,
+   "radiation": 1,
+   "light": 0.25,
+   "basalt": 0.6,
+   "regolith": 0.8,
+   "ice": 0.0,
+   "impact": 1,
+   "caves": 0.0,
+   "salts": 0.7,
+   "sediment": 1,
+   "barren": 1,
+   "relief": 0.85,
+   "facts": [
+    "5 km sedimentary mound with clays → sulfates",
+    "Surface radiation dose ≈ 0.67 mSv/day (RAD)",
+    "Diurnal ΔT up to 90 K (REMS)"
+   ],
+   "sources": [
+    "Curiosity RAD",
+    "Curiosity REMS",
+    "MRO CRISM",
+    "MRO HiRISE"
+   ]
+  },
+  {
+   "id": "mars_arcadia",
+   "body": "Mars",
+   "name": "Arcadia Planitia (human-base ice target)",
+   "lat": 40.0,
+   "lon": -160.0,
+   "aridity": 1,
+   "cold": 1,
+   "swing": 1,
+   "thin_air": 1,
+   "radiation": 1,
+   "light": 0.6,
+   "basalt": 0.6,
+   "regolith": 0.8,
+   "ice": 1,
+   "impact": 0.6,
+   "caves": 0.0,
+   "salts": 0.4,
+   "sediment": 0.3,
+   "barren": 1,
+   "relief": 0.2,
+   "facts": [
+    "Shallow excess ice < 1 m deep (SWIM / SHARAD)",
+    "Flat, low-elevation plains – safe landing",
+    "Fresh ice-exposing impact craters (HiRISE)"
+   ],
+   "sources": [
+    "MRO SHARAD",
+    "Mars Odyssey GRS/NS",
+    "MRO HiRISE",
+    "SWIM project"
+   ],
+   "radar_ice": {
+    "value": 0.9,
+    "text": "MRO SHARAD + SWIM: excess ice within ~1 m of the surface (Morgan et al. 2021)"
+   }
+  },
+  {
+   "id": "mars_deuteronilus",
+   "body": "Mars",
+   "name": "Deuteronilus Mensae (debris-covered glaciers)",
+   "lat": 44.0,
+   "lon": 22.0,
+   "aridity": 1,
+   "cold": 1,
+   "swing": 1,
+   "thin_air": 1,
+   "radiation": 1,
+   "light": 0.65,
+   "basalt": 0.4,
+   "regolith": 0.7,
+   "ice": 1,
+   "impact": 0.5,
+   "caves": 0.0,
+   "salts": 0.3,
+   "sediment": 0.6,
+   "barren": 1,
+   "relief": 0.8,
+   "facts": [
+    "Lobate debris aprons that are > 90% water ice (SHARAD)",
+    "Mesas and scarps along the dichotomy boundary"
+   ],
+   "sources": [
+    "MRO SHARAD",
+    "MOLA",
+    "MRO CTX"
+   ],
+   "radar_ice": {
+    "value": 1.0,
+    "text": "MRO SHARAD radar: debris aprons are >90% buried water ice (Plaut et al. 2009)"
+   }
+  },
+  {
+   "id": "mars_arsia_caves",
+   "body": "Mars",
+   "name": "Arsia Mons skylights (lava-tube caves)",
+   "lat": -8.5,
+   "lon": -121.0,
+   "aridity": 1,
+   "cold": 1,
+   "swing": 1,
+   "thin_air": 1,
+   "radiation": 1,
+   "light": 0.3,
+   "basalt": 1,
+   "regolith": 0.9,
+   "ice": 0.1,
+   "impact": 0.3,
+   "caves": 1,
+   "salts": 0.1,
+   "sediment": 0.1,
+   "barren": 1,
+   "relief": 0.8,
+   "facts": [
+    "'Seven Sisters' cave skylights 100-250 m wide (THEMIS)",
+    "Basaltic shield volcano flanks, ~9-17 km elevation"
+   ],
+   "sources": [
+    "Mars Odyssey THEMIS",
+    "MRO HiRISE",
+    "MOLA"
+   ]
+  },
+  {
+   "id": "mars_meridiani",
+   "body": "Mars",
+   "name": "Meridiani Planum (Opportunity)",
+   "lat": -1.95,
+   "lon": -5.5,
+   "aridity": 1,
+   "cold": 1,
+   "swing": 1,
+   "thin_air": 1,
+   "radiation": 1,
+   "light": 0.25,
+   "basalt": 0.5,
+   "regolith": 0.8,
+   "ice": 0,
+   "impact": 0.6,
+   "caves": 0,
+   "salts": 1,
+   "sediment": 0.9,
+   "barren": 1,
+   "relief": 0.1,
+   "facts": [
+    "Hematite 'blueberries' and jarosite (sulfate) evaporites",
+    "Acidic, briny past groundwater"
+   ],
+   "sources": [
+    "MGS TES",
+    "Opportunity APXS/Mössbauer",
+    "MRO CRISM"
+   ]
+  }
+ ]
+}

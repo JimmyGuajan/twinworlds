@@ -1,0 +1,90 @@
+{
+ "sources": {
+  "lola": "https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/data/lola_gdr/cylindrical/img/ldem_16.img",
+  "mola": "https://pds-geosciences.wustl.edu/mgs/mgs-m-mola-5-megdr-l3-v1/mgsl_300x/meg016/megt90n000eb.img",
+  "ns_epi": "https://pds-geosciences.wustl.edu/ody/urn-nasa-pds-odyssey_grs_special/data/ns_epithermal_020917.tab",
+  "diviner": "https://pds-geosciences.wustl.edu/lro/urn-nasa-pds-lro_diviner_derived1/data_derived_prp/dlre_prp_south.tab"
+ },
+ "window_km": 15.0,
+ "step_km": 2.0,
+ "targets": {
+  "moon_shackleton": {
+   "relief_m": 2478.0999999999995,
+   "relief": 1.0,
+   "insolation_ratio": 0.0,
+   "light": 1.0,
+   "diviner_elements": 5509,
+   "diviner_t_avg_K": 119.52544980940274,
+   "diviner_ice_within_1m_frac": 0.3487021237974224,
+   "diviner_cold_trap_frac": 0.05717916137229987,
+   "ice": 1.0,
+   "cold": 1.0
+  },
+  "moon_malapert": {
+   "relief_m": 3752.7999999999993,
+   "relief": 1.0,
+   "insolation_ratio": 0.2684871527114144,
+   "light": 0.726891059110732,
+   "diviner_elements": 5514,
+   "diviner_t_avg_K": 136.26044649981904,
+   "diviner_ice_within_1m_frac": 0.32462821907870876,
+   "diviner_cold_trap_frac": 0.000544069640914037,
+   "ice": 1.0,
+   "cold": 1.0
+  },
+  "moon_tranquillitatis_pit": {
+   "relief_m": 57.80000000000007,
+   "relief": 0.03853333333333338,
+   "insolation_ratio": 0.9483814971155794,
+   "light": 0.0
+  },
+  "mars_jezero": {
+   "relief_m": 334.0,
+   "relief": 0.22266666666666668,
+   "insolation_ratio": 0.7790632664278363,
+   "light": 0.08867091696520463,
+   "ns_epithermal_counts": 7.578415254237288,
+   "ice": 0.0
+  },
+  "mars_gale": {
+   "relief_m": 3197.4,
+   "relief": 1.0,
+   "insolation_ratio": 0.5973108256888792,
+   "light": 0.315861467888901,
+   "ns_epithermal_counts": 5.676585585585583,
+   "ice": 0.10021938027993443
+  },
+  "mars_arcadia": {
+   "relief_m": 33.0,
+   "relief": 0.022,
+   "insolation_ratio": 0.38887232563703167,
+   "light": 0.5764095929537103,
+   "ns_epithermal_counts": 4.621351351351351,
+   "ice": 0.3284274759188254
+  },
+  "mars_deuteronilus": {
+   "relief_m": 713.9999999999932,
+   "relief": 0.4759999999999954,
+   "insolation_ratio": 0.31282800043235093,
+   "light": 0.6714649994595613,
+   "ns_epithermal_counts": 6.0972124999999995,
+   "ice": 0.009253352076124611
+  },
+  "mars_arsia_caves": {
+   "relief_m": 1185.0,
+   "relief": 0.79,
+   "insolation_ratio": 0.5560355220778961,
+   "light": 0.36745559740262984,
+   "ns_epithermal_counts": 7.695146551724138,
+   "ice": 0.0
+  },
+  "mars_meridiani": {
+   "relief_m": 53.0,
+   "relief": 0.035333333333333335,
+   "insolation_ratio": 0.6459271977562271,
+   "light": 0.25509100280471614,
+   "ns_epithermal_counts": 5.541482758620689,
+   "ice": 0.12943711967545643
+  }
+ }
+}
