@@ -63,11 +63,12 @@
     .ringLat("lat").ringLng("lng").ringColor(() => t => `rgba(255,155,71,${1 - t})`).ringMaxRadius(4).ringPropagationSpeed(2.5).ringRepeatPeriod(1100)
     .arcStartLat("a0").arcStartLng("o0").arcEndLat("a1").arcEndLng("o1").arcColor(() => ["#36c2b4", "#ff9b47"]).arcStroke(0.6)
     .arcDashLength(0.4).arcDashGap(0.2).arcDashAnimateTime(2200).arcAltitudeAutoScale(0.4)
-    .polygonCapColor("cap").polygonSideColor(() => "rgba(0,0,0,0)").polygonStrokeColor(() => false).polygonAltitude("alt")
-    .polygonLabel("label").polygonsTransitionDuration(0).onPolygonClick(p => p.onClick && p.onClick())
     .onPointClick(p => p.onClick && p.onClick())
     .onPointHover(p => { gEl.style.cursor = p ? "pointer" : ""; })
-    .onGlobeClick(({ lat, lng }) => { if ((state.stage === "verdict" && state.tab === "scan") || state.stage === "earth") scanPoint(lat, lng); });
+    .onGlobeClick(({ lat, lng }) => {
+      if ((state.stage === "verdict" && state.tab === "scan") || state.stage === "earth") scanPoint(lat, lng);
+      else if (state.stage === "verdict" && state.tab === "map") heatClick(lat, lng);
+    });
   const ctl = globe.controls();
   ctl.autoRotate = true; ctl.autoRotateSpeed = 0.35; ctl.enableDamping = true;
   let currentTex = "Earth";
@@ -89,7 +90,7 @@
     d.innerHTML = $("#ship").outerHTML.replace('id="ship"', "").replace('class="ship"', 'class="lander"');
     return d.firstElementChild;
   }
-  function clearLayers() { globe.pointsData([]).htmlElementsData([]).ringsData([]).arcsData([]).polygonsData([]); }
+  function clearLayers() { globe.pointsData([]).htmlElementsData([]).ringsData([]).arcsData([]); }
 
   function showTargetsOnGlobe() {
     setTexture(state.body);
@@ -288,7 +289,7 @@
       state.tab = b.dataset.tab; renderVerdictPanel();
       $("#hint").hidden = state.tab !== "scan";
       if (state.peek) unpeek(false);
-      if (["camp", "map"].includes(prev) && prev !== state.tab) { globe.polygonsData([]); showEarthResults(rank(), true); }
+      if (["camp", "map"].includes(prev) && prev !== state.tab) showEarthResults(rank(), true);
     }));
     $("#hint").textContent = state.lang === "es" ? "🛰 Haz clic en cualquier punto del globo" : "🛰 Click any point on the globe";
     $("#newBtn").onclick = () => { state.profile = null; state.scan = null; clearLayers(); go("dest"); pickTarget(state.targetId); };
@@ -485,7 +486,7 @@
   function peek(id) {
     const t = TARGETS.find(x => x.id === id);
     state.peek = id;
-    globe.polygonsData([]).arcsData([]);
+    globe.arcsData([]);
     setTexture(t.body);
     globe.pointsData([{ lat: t.lat, lng: t.lon, alt: 0.02, r: 1.1, color: "#ff9b47", label: esc(t.name) }]);
     globe.htmlElementsData([{ lat: t.lat, lng: t.lon, alt: 0.03, el: labelEl(short(t.name), "win") }]);
@@ -511,7 +512,7 @@
   function showEarthMode(focus) {
     setTexture("Earth");
     const sc = state.scan;
-    globe.polygonsData([]).arcsData([]);
+    globe.arcsData([]);
     globe.pointsData(CURATED.map(s => ({ lat: s.lat, lng: s.lon, alt: 0.02, r: 0.45, color: "#36c2b4", label: `<b>${esc(s.name)}</b>`,
       onClick: () => { state.scan = s; renderEarthPanel(); showEarthMode(true); } })));
     globe.htmlElementsData(sc ? [{ lat: sc.lat, lng: sc.lon, alt: 0.02, el: labelEl(sc.name.split(" – ")[0], "win") }] : []);
@@ -572,25 +573,45 @@
     }
     return out;
   }
-  function drawHeatmap() {
+  let heatScored = null, earthImg = null;
+  function loadEarthImage() {
+    if (earthImg) return Promise.resolve(earthImg);
+    return new Promise(res => { const im = new Image(); im.onload = () => res((earthImg = im)); im.src = TEX.Earth; });
+  }
+  async function drawHeatmap() {
+    // the heat map is painted INTO the globe texture (one image) instead of thousands of 3D objects
     const scored = gridScores(); if (!scored) return null;
-    const h = (window.TW_GRID.step || 3) / 2;
+    heatScored = scored;
     const lo = Math.min(...scored.map(c => c.score)), hi = Math.max(...scored.map(c => c.score));
-    globe.polygonsData(scored.map(c => ({
-      geometry: { type: "Polygon", coordinates: [[[c.lon - h, c.lat - h], [c.lon + h, c.lat - h], [c.lon + h, c.lat + h], [c.lon - h, c.lat + h], [c.lon - h, c.lat - h]]] },
-      cap: scoreColor(c.score, lo + (hi - lo) * 0.25, hi).replace("rgb", "rgba").replace(")", ",0.78)"),
-      alt: 0.004 + 0.05 * TW.clamp((c.score - lo) / (hi - lo || 1)) ** 3,
-      label: `${T().twinScore}: ${c.score.toFixed(0)}<br>${c.lat.toFixed(1)}°, ${c.lon.toFixed(1)}° · ${c.power.t2m.toFixed(1)} °C · ${(c.power.precip * 365).toFixed(0)} mm`,
-      onClick: () => { state.tab = "scan"; renderVerdictPanel(); globe.polygonsData([]); scanPoint(c.lat, c.lon); },
-    })));
-    globe.pointsData(CURATED.map(s => ({ lat: s.lat, lng: s.lon, alt: 0.06, r: 0.25, color: "#ffffff", label: esc(s.name), onClick: () => selectSite(s.id) })));
+    const W = 2048, H = 1024, step = window.TW_GRID.step || 2.5;
+    const cv = document.createElement("canvas"); cv.width = W; cv.height = H;
+    const g = cv.getContext("2d");
+    g.drawImage(await loadEarthImage(), 0, 0, W, H);
+    g.fillStyle = "rgba(3,6,13,0.45)"; g.fillRect(0, 0, W, H);
+    const cw = (step / 360) * W, ch = (step / 180) * H;
+    for (const c of scored) {
+      const t = TW.clamp((c.score - lo) / (hi - lo || 1));
+      g.globalAlpha = 0.35 + 0.55 * t;
+      g.fillStyle = scoreColor(c.score, lo + (hi - lo) * 0.25, hi);
+      g.fillRect(((c.lon + 180) / 360) * W - cw / 2, ((90 - c.lat) / 180) * H - ch / 2, cw + 0.5, ch + 0.5);
+    }
+    g.globalAlpha = 1;
+    globe.globeImageUrl(cv.toDataURL("image/jpeg", 0.88)); currentTex = "heat";
+    globe.pointsData(CURATED.map(s => ({ lat: s.lat, lng: s.lon, alt: 0.02, r: 0.3, color: "#ffffff", label: esc(s.name), onClick: () => selectSite(s.id) })));
     globe.ringsData([]).arcsData([]).htmlElementsData([]);
     return scored;
+  }
+  function heatClick(lat, lng) {
+    // merged hexes are not individually clickable: scan the nearest grid cell instead
+    if (!heatScored) return;
+    const c = heatScored.reduce((b, x) => (distKm({ lat, lon: lng }, x) < distKm({ lat, lon: lng }, b) ? x : b));
+    state.tab = "scan"; renderVerdictPanel(); setTexture("Earth"); scanPoint(c.lat, c.lon);
   }
   function tabMap() {
     const M = T().map;
     if (!window.TW_GRID) { $("#tabBody").innerHTML = `<p class="help">${M.missing}</p>`; return; }
-    const scored = drawHeatmap();
+    const scored = gridScores();
+    drawHeatmap();
     const hs = hotspots(scored);
     $("#tabBody").innerHTML = `<h2 class="p-title">🔥 ${M.title}</h2><p class="p-sub">${M.lead(scored.length, window.TW_GRID.step)}</p>
       <div class="legend-bar"><span>${Math.round(Math.min(...scored.map(c => c.score)))}</span><i style="background:linear-gradient(90deg,${STOPS.join(",")})"></i><span>${Math.round(Math.max(...scored.map(c => c.score)))}</span></div>

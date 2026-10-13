@@ -34,6 +34,7 @@ URL = ("https://power.larc.nasa.gov/api/temporal/climatology/regional?latitude-m
        "&longitude-min={o0}&longitude-max={o1}&parameters={p}&community=RE&format=JSON")
 PARAMS = ["T2M", "T2M_RANGE", "PRECTOTCORR", "RH2M", "PS", "ALLSKY_SFC_SW_DWN", "ALLSKY_SFC_UV_INDEX"]
 COLS = ["lat", "lon", "t2m", "t2m_range", "precip", "rh", "ps", "sw", "sw_min", "sw_max", "uv", "grid_elev"]
+COARSE = ["ALLSKY_SFC_SW_DWN", "ALLSKY_SFC_UV_INDEX"]  # CERES SYN1deg, 1° grid
 MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]
 
 
@@ -83,14 +84,36 @@ def main():
 
     lock = threading.Lock()
 
-    def do_box(box):
+    def assign_coarse(p, js, a0, o0):
+        """SW and UV come from CERES SYN1deg on a 1° grid, so their points never sit on the 2.5° grid:
+        give every land cell of the box the value of the nearest coarse point (within 1°)."""
+        fill = js.get("header", {}).get("fill_value", -999)
+        feats = [(f["geometry"]["coordinates"][1], f["geometry"]["coordinates"][0], f["properties"]["parameter"][p]) for f in js.get("features", [])]
+        for key, rec in data.items():
+            lat, lon = map(float, key.split(","))
+            if not (a0 <= lat <= a0 + 10 and o0 <= lon <= o0 + 10) or not feats:
+                continue
+            flat, flon, v = min(feats, key=lambda f: (f[0] - lat) ** 2 + (f[1] - lon) ** 2)
+            if (flat - lat) ** 2 + (flon - lon) ** 2 > 1.0:
+                continue
+            if p == "ALLSKY_SFC_SW_DWN":
+                m = [v[k] for k in MONTHS if v[k] != fill]
+                if m:
+                    rec["SW"], rec["SW_MIN"], rec["SW_MAX"] = v["ANN"], min(m), max(m)
+            else:
+                rec[p] = None if v["ANN"] == fill else v["ANN"]
+
+    def do_box(box, params=PARAMS):
         a0, o0 = map(int, box.split(","))
         got = {}
-        for p in PARAMS:
+        for p in params:
             got[p] = get(URL.format(a0=a0, a1=a0 + 10, o0=o0, o1=o0 + 10, p=p))
             time.sleep(0.3)
         with lock:
-            for p, js in got.items():
+            for p, js in got.items():  # fine (MERRA-2) parameters first, coarse ones last
+                if p in COARSE:
+                    assign_coarse(p, js, a0, o0)
+                    continue
                 fill = js.get("header", {}).get("fill_value", -999)
                 for f in js.get("features", []):
                     lon, lat, z = f["geometry"]["coordinates"]
@@ -98,14 +121,25 @@ def main():
                         continue  # ocean or not on the 2.5° grid
                     v = f["properties"]["parameter"][p]
                     rec = data.setdefault(f"{lat},{lon}", {"z": z})
-                    if p == "ALLSKY_SFC_SW_DWN":
-                        m = [v[k] for k in MONTHS if v[k] != fill]
-                        if m:
-                            rec["SW"], rec["SW_MIN"], rec["SW_MAX"] = v["ANN"], min(m), max(m)
-                    else:
-                        rec[p] = None if v["ANN"] == fill else v["ANN"]
-            cache["done"].append(box)
+                    rec[p] = None if v["ANN"] == fill else v["ANN"]
+            if params is PARAMS:
+                cache["done"].append(box)
+            else:
+                cache.setdefault("done_coarse", []).append(box)
         return box
+
+    # repair pass for caches built before the coarse-grid fix
+    redo = [b for b in land_boxes if b in done and b not in set(cache.get("done_coarse", []))
+            and any(len(v) < len(PARAMS) + 3 for k, v in data.items())]
+    if redo and not todo:
+        print(f"filling SW/UV for {len(redo)} boxes")
+        with ThreadPoolExecutor(3) as ex:
+            for n, _ in enumerate(ex.map(lambda b: do_box(b, COARSE), redo), 1):
+                if n % 20 == 0 or n == len(redo):
+                    with lock:
+                        CACHE.write_text(json.dumps(cache), encoding="utf-8")
+                        cells = write_grid(data)
+                    print(f"[coarse {n}/{len(redo)}] {cells} complete cells")
 
     with ThreadPoolExecutor(3) as ex:  # 3 boxes in flight; get() backs off on HTTP 429
         for n, box in enumerate(ex.map(do_box, todo), 1):

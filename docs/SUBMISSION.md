@@ -19,7 +19,7 @@ A guided 3D experience lets a planner pick a Moon or Mars base site and a missio
 TwinWorlds also does five more things:
 - It paints a **global heat map** of the whole land surface and lists the most promising **uncatalogued zones**.
 - It surfaces **untapped analogs** nobody uses yet.
-- It builds **3-site campaigns** that cover 89–96% of a target.
+- It builds **3-site campaigns** that cover 90–96% of a target.
 - It **fingerprints any clicked point on Earth live**, including MODIS vegetation.
 - Its **reverse twin** mode tells you which Moon or Mars site any Earth place resembles.
 
@@ -64,7 +64,8 @@ TwinWorlds also does five more things:
 - *Arcadia Planitia ice (ISRU):* the **Changtang Plateau (Tibet)** ranks #1, with 52 kPa pressure, permafrost and an arid climate.
 - *Lunar south pole (polar light):* **McMurdo Dry Valleys** and the untapped **Miller Range blue-ice fields** come out on top. A 3-site campaign (McMurdo + Dome C + Aorounga) covers 96%.
 - *Jezero (astrobiology):* the untapped Saharan sites **Gilf Kebir** and **Aorounga** stand out, together with Licancabur.
-- *Ecuador as an accessible node:* the Galápagos shields **Sierra Negra (#6)** and **Fernandina (#9)** rank in the global top 10 for lunar and Martian lava-tube caves. **Arenal del Chimborazo** (4,300 m, 1,549 m of measured relief, glacier ice, 3 h from Quito) is the #3 untapped analog for Arcadia ice.
+- *Validation:* without being told, the reverse twin pairs **Atacama with Meridiani Planum**, a pairing the literature already uses for sulfates and perchlorates. **Haughton Crater** comes out as a polar and impact analog.
+- *Ecuador as an accessible node:* the Galápagos shields **Sierra Negra (#8)** and **Fernandina (#9)** rank in the global top 10 for lunar and Martian lava-tube caves. **Arenal del Chimborazo** (4,300 m, 1,549 m of measured relief, glacier ice, 3 h from Quito) is the #3 untapped analog for Arcadia ice.
 
 **Tools**
 HTML/CSS/JavaScript, globe.gl (Three.js), Chart.js, Python 3 + NumPy + Pillow.

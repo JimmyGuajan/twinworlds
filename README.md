@@ -28,7 +28,7 @@ The interface is available in Spanish and English.
 | **Provenance on every number** | Each axis carries a *measured*, *mission* or *literature* badge, so judges and scientists can see exactly what is data and what is an estimate. |
 | **Mission-aware scoring** | Weights depend on what you are testing. |
 | **Untapped analog finder** | Opportunity = similarity × (1 − current analog usage). It surfaces places nobody has used yet. |
-| **Analog Campaign Builder** | A greedy set-cover picks 3 complementary sites that cover 89–96% of the target, against about 60–70% for the best single site. |
+| **Analog Campaign Builder** | A greedy set-cover picks 3 complementary sites that cover 90–96% of the target, against about 60–70% for the best single site. |
 | **Live scan** | Click anywhere and the app queries NASA POWER, the DEM and MODIS NDVI in the browser and fingerprints the point in seconds (8 of 15 axes measured live). |
 | **🔥 Global heat map** | The whole land surface is scored on a 2.5° grid of NASA POWER climatology (`pipeline/global_grid.py`). Bright = alike. The app lists the most promising **uncatalogued zones**: the best cells more than 700 km from any known analog, which are candidates for *new* analogs. |
 | **🌿 Measured vegetation** | The "no vegetation" axis comes from MODIS Terra MOD13Q1 NDVI (250 m, ORNL DAAC web service) for every site and every live scan (`pipeline/ndvi.py`). |
@@ -39,7 +39,7 @@ The interface is available in Spanish and English.
 - **Arcadia Planitia ice (ISRU):** the **Changtang Plateau** (Tibet) ranks #1.
 - **Lunar south pole (polar light):** **McMurdo Dry Valleys** and the untapped **Miller Range blue-ice fields** come out on top. A 3-site campaign covers 96% of the fingerprint.
 - **Jezero (astrobiology):** the untapped Saharan sites **Gilf Kebir** and **Aorounga** stand out, together with Licancabur.
-- **🇪🇨 Ecuador:** Galápagos lava fields (**Sierra Negra #6, Fernandina #9**) are in the global top 10 for lunar and Martian caves. **Arenal del Chimborazo** is the #3 untapped analog for Arcadia ice: 4,300 m, 1,549 m of measured relief, glacier ice, 3 h from Quito.
+- **🇪🇨 Ecuador:** Galápagos lava fields (**Sierra Negra #8, Fernandina #9**) are in the global top 10 for lunar and Martian caves. **Arenal del Chimborazo** is the #3 untapped analog for Arcadia ice: 4,300 m, 1,549 m of measured relief, glacier ice, 3 h from Quito.
 
 ## Run it
 No build step is needed.
@@ -132,7 +132,7 @@ docs/SUBMISSION.md       Space Apps project text and 30-s video script
 **Además, la app permite:**
 - Ver por qué se eligió el sitio y qué no puede simular.
 - Revisar la evidencia de cada número.
-- Armar una campaña de 3 sitios que cubre el 89–96% del objetivo.
+- Armar una campaña de 3 sitios que cubre el 90–96% del objetivo.
 - Escanear en vivo cualquier punto del planeta (clima, relieve y vegetación MODIS).
 - Ver un **mapa de calor de toda la Tierra** con las zonas más parecidas que nadie ha catalogado.
 - Usar el **gemelo inverso**: empiezas desde un lugar de la Tierra y te dice a qué sitio de la Luna o Marte se parece.
