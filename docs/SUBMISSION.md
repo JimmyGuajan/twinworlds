@@ -22,8 +22,8 @@ TwinWorlds also does three more things:
 - It **fingerprints any clicked point on Earth live**.
 
 ## Links
-- Demo: [GitHub Pages URL]
-- Code: [GitHub repo URL]
+- Demo: https://jimmyguajan.github.io/twinworlds/
+- Code: https://github.com/JimmyGuajan/twinworlds
 - 30-s video / slides: [link]
 
 ## Project details

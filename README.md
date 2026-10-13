@@ -1,5 +1,7 @@
 # TwinWorlds 🌍🌕🔴
 **Find Earth's twin for every Moon & Mars base site.**
+
+**▶ Live demo: https://jimmyguajan.github.io/twinworlds/**
 NASA Space Apps Challenge 2026: *Identify Earth Locations that Analog the Permanent Moon Base Locations and Mars*
 
 TwinWorlds turns every place (an Earth site, a Moon or Mars landing site, or **any point you click**) into a 15-axis **environmental fingerprint** measured from open NASA data. It then tells you, with evidence, **where on Earth to rehearse your mission**.
