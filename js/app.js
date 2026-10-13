@@ -63,9 +63,11 @@
     .ringLat("lat").ringLng("lng").ringColor(() => t => `rgba(255,155,71,${1 - t})`).ringMaxRadius(4).ringPropagationSpeed(2.5).ringRepeatPeriod(1100)
     .arcStartLat("a0").arcStartLng("o0").arcEndLat("a1").arcEndLng("o1").arcColor(() => ["#36c2b4", "#ff9b47"]).arcStroke(0.6)
     .arcDashLength(0.4).arcDashGap(0.2).arcDashAnimateTime(2200).arcAltitudeAutoScale(0.4)
+    .polygonCapColor("cap").polygonSideColor(() => "rgba(0,0,0,0)").polygonStrokeColor(() => false).polygonAltitude("alt")
+    .polygonLabel("label").polygonsTransitionDuration(0).onPolygonClick(p => p.onClick && p.onClick())
     .onPointClick(p => p.onClick && p.onClick())
     .onPointHover(p => { gEl.style.cursor = p ? "pointer" : ""; })
-    .onGlobeClick(({ lat, lng }) => { if (state.stage === "verdict" && state.tab === "scan") scanPoint(lat, lng); });
+    .onGlobeClick(({ lat, lng }) => { if ((state.stage === "verdict" && state.tab === "scan") || state.stage === "earth") scanPoint(lat, lng); });
   const ctl = globe.controls();
   ctl.autoRotate = true; ctl.autoRotateSpeed = 0.35; ctl.enableDamping = true;
   let currentTex = "Earth";
@@ -87,7 +89,7 @@
     d.innerHTML = $("#ship").outerHTML.replace('id="ship"', "").replace('class="ship"', 'class="lander"');
     return d.firstElementChild;
   }
-  function clearLayers() { globe.pointsData([]).htmlElementsData([]).ringsData([]).arcsData([]); }
+  function clearLayers() { globe.pointsData([]).htmlElementsData([]).ringsData([]).arcsData([]).polygonsData([]); }
 
   function showTargetsOnGlobe() {
     setTexture(state.body);
@@ -121,7 +123,7 @@
     document.documentElement.lang = state.lang;
     document.querySelectorAll("[data-i]").forEach(el => (el.textContent = T()[el.dataset.i]));
     document.querySelectorAll("#lang button").forEach(b => b.classList.toggle("on", b.dataset.l === state.lang));
-    const idx = { intro: -1, dest: 0, mission: 1, launch: 2, verdict: 3 }[state.stage];
+    const idx = { intro: -1, earth: -1, dest: 0, mission: 1, launch: 2, verdict: 3 }[state.stage];
     $("#progress").innerHTML = T().steps.map((s, i) => `<li class="${i === idx ? "on" : i < idx ? "done" : ""}"><i>${i < idx ? "✓" : i + 1}</i>${s}</li>`).join("");
     document.body.dataset.stage = state.stage;
   }
@@ -160,6 +162,7 @@
       $("#launchBtn").onclick = launch;
     }
     if (state.stage === "verdict") renderVerdictPanel();
+    if (state.stage === "earth") renderEarthPanel();
   }
 
   function pickTarget(id) {
@@ -256,6 +259,7 @@
       case "radiation": return pw.sw == null ? "" : `${pw.sw.toFixed(1)} kWh/m²/d · UV ${pw.uv?.toFixed(1)} · NASA POWER`;
       case "light": return pw.sw_min == null ? "" : `${es ? "mes oscuro/brillante" : "dark/bright month"} ${(pw.sw_min / pw.sw_max).toFixed(2)} · NASA POWER`;
       case "relief": return s.relief_m == null ? "" : `${Math.round(s.relief_m)} m ${es ? "en 15 km" : "within 15 km"} · Copernicus DEM`;
+      case "barren": if (s.ndvi != null) return `NDVI ${s.ndvi.toFixed(2)} · MODIS MOD13Q1 (ORNL DAAC)`; // else falls through
       default: return s.scanned ? (es ? "sin datos: requiere campo" : "no data: needs fieldwork") : (es ? "estimado de literatura geológica" : "estimate from geologic literature");
     }
   }
@@ -275,7 +279,7 @@
   const helpOpen = new Set(); // tabs whose "?" help box the user has opened
   function renderVerdictPanel() {
     const p = $("#panel"), t = target();
-    const tabs = ["verdict", "top", "camp", "evidence", "scan"];
+    const tabs = ["verdict", "top", "camp", "map", "evidence", "scan"];
     p.innerHTML = `<nav class="tabs">${tabs.map(k => `<button data-tab="${k}" class="${k === state.tab ? "on" : ""}">${T().tabs[k]}</button>`).join("")}</nav>
       <div class="p-body" id="tabBody"></div>
       <div class="p-foot"><button class="btn ghost" id="newBtn">↺ ${T().newMission}</button><button class="btn" id="cardBtn">⬇ ${T().card}</button></div>`;
@@ -283,13 +287,14 @@
       const prev = state.tab;
       state.tab = b.dataset.tab; renderVerdictPanel();
       $("#hint").hidden = state.tab !== "scan";
-      if (prev === "camp" && state.tab !== "camp") showEarthResults(rank(), true);
+      if (state.peek) unpeek(false);
+      if (["camp", "map"].includes(prev) && prev !== state.tab) { globe.polygonsData([]); showEarthResults(rank(), true); }
     }));
     $("#hint").textContent = state.lang === "es" ? "🛰 Haz clic en cualquier punto del globo" : "🛰 Click any point on the globe";
     $("#newBtn").onclick = () => { state.profile = null; state.scan = null; clearLayers(); go("dest"); pickTarget(state.targetId); };
     const results = rank();
     $("#cardBtn").onclick = () => exportCard(results.find(r => r.site.id === state.selectedId) || results[0]);
-    ({ verdict: tabVerdict, top: tabTop, camp: tabCamp, evidence: tabEvidence, scan: tabScan })[state.tab](results, t);
+    ({ verdict: tabVerdict, top: tabTop, camp: tabCamp, map: tabMap, evidence: tabEvidence, scan: tabScan })[state.tab](results, t);
     const tab = state.tab;
     $("#tabBody").insertAdjacentHTML("afterbegin",
       `<details class="about" ${helpOpen.has(tab) ? "open" : ""}><summary>❓ ${T().helpQ}</summary><p>${T().help[tab]}</p></details>`);
@@ -315,9 +320,11 @@
       <ul class="reasons bad">${gaps.map(k => `<li><span class="ic">${ICON[k]}</span><span><b>${FL(k)}</b><small>${esc(earthDetail(k, s))}</small></span><span class="pct" style="color:${matchColor(r.per[k])}">${Math.round(r.per[k] * 100)}%</span></li>`).join("") || "<li>—</li>"}</ul>
       <div class="radar-wrap"><canvas id="radar"></canvas></div>
       ${s.note ? `<p class="note">${esc(s.note)}</p>` : ""}
+      ${reverseHtml(s)}
       <div class="sec">🛰 ${T().dataUsed}</div>
       <div class="chips">${["NASA POWER", "Copernicus DEM", ...new Set(Object.values(t.prov || {}).filter(p => p.kind === "measured").map(p => p.text.split(":")[0]))].map(c => `<span class="chip">${esc(c)}</span>`).join("")}</div>`;
     drawRadar(s, t);
+    bindReverse();
   }
 
   function drawRadar(s, t) {
@@ -383,7 +390,7 @@
   function tabEvidence(results, t) {
     const r = results.find(x => x.site.id === state.selectedId) || results[0], s = r.site;
     const kindOf = k => t.prov?.[k]?.kind || "literature";
-    const earthKind = k => (CLIMATE_KEYS.includes(k) || k === "relief" ? "measured" : "literature");
+    const earthKind = k => (CLIMATE_KEYS.includes(k) || k === "relief" || (k === "barren" && s.ndvi != null) ? "measured" : "literature");
     $("#tabBody").innerHTML = `<h2 class="p-title">🔬 ${T().evTitle}</h2>
       <div class="sec">${T().evTarget}: ${esc(short(t.name))}</div>
       <table class="ev">${KEYS.map(k => `<tr><td>${ICON[k]} ${FL(k)}</td><td><span class="badge ${kindOf(k)}">${T().kinds[kindOf(k)]}</span><div class="src">${esc(targetDetail(k, t))}</div></td><td class="v">${t[k].toFixed(2)}</td></tr>`).join("")}</table>
@@ -400,10 +407,11 @@
       const r = results.find(x => x.site.id === sc.id);
       const pos = rank("match", CURATED.concat(sc)).findIndex(x => x.site.id === sc.id) + 1;
       box = `<div class="scanbox"><b>📍 ${sc.lat.toFixed(3)}°, ${sc.lon.toFixed(3)}°</b> · ${Math.round(sc.elev ?? 0)} m<br>${T().scanResult(r.score.toFixed(1), pos, CURATED.length + 1)}
-        <p class="help" style="margin-top:8px">${T().scanAxes}</p><button class="btn" id="seeScan">→ ${T().tabs.verdict}</button></div>`;
+        <p class="help" style="margin-top:8px">${T().scanAxes}</p><button class="btn" id="seeScan">→ ${T().tabs.verdict}</button>${reverseHtml(sc)}</div>`;
     }
     $("#tabBody").innerHTML = `<h2 class="p-title">🛰 ${T().scanTitle}</h2><p class="p-sub">${T().scanHelp}</p>${box}`;
     const b = $("#seeScan"); if (b) b.onclick = () => selectSite(sc.id);
+    bindReverse();
   }
 
   // ---------- live scan ----------
@@ -429,22 +437,178 @@
   }
   async function scanPoint(lat, lng) {
     if (state.scanBusy) return;
-    state.scanBusy = true; renderVerdictPanel();
+    state.scanBusy = true; renderPanel();
     globe.ringsData([{ lat, lng }]);
     try {
-      const [power, rel] = await Promise.all([fetchPower(lat, lng), fetchReliefWindow(lat, lng)]);
+      const [power, rel, ndvi] = await Promise.all([fetchPower(lat, lng), fetchReliefWindow(lat, lng), fetchNdvi(lat, lng)]);
       if (power.t2m == null) throw new Error("no data");
       const s = { id: "scan", name: state.lang === "es" ? "Punto escaneado" : "Scanned point", country: `${lat.toFixed(3)}°, ${lng.toFixed(3)}°`, lat, lon: lng,
         scanned: true, usage: 0, access: null, power, elev: rel.center, relief_m: rel.relief_m, relief: TW.clamp(rel.relief_m / 1500) };
       KEYS.forEach(k => { if (!CLIMATE_KEYS.includes(k) && k !== "relief") s[k] = null; });
+      if (ndvi != null) { s.ndvi = ndvi; s.barren = TW.clamp((0.5 - ndvi) / 0.4); }
       s.fp = TW.fingerprint(s);
       state.scan = s; state.selectedId = "scan";
     } catch (e) {
       state.scan = null;
     }
     state.scanBusy = false;
-    renderVerdictPanel();
-    showEarthResults(rank(), false);
+    renderPanel();
+    if (state.stage === "earth") showEarthMode(false); else showEarthResults(rank(), false);
+  }
+
+  async function fetchNdvi(lat, lon) {
+    // MODIS Terra MOD13Q1 NDVI (250 m) from the ORNL DAAC web service: January + July 2023 composites, 2 km window
+    try {
+      const vals = [];
+      await Promise.all(["A2023017", "A2023193"].map(async d => {
+        const js = await (await fetch(`https://modis.ornl.gov/rst/api/v1/MOD13Q1/subset?latitude=${lat.toFixed(4)}&longitude=${lon.toFixed(4)}&band=250m_16_days_NDVI&startDate=${d}&endDate=${d}&kmAboveBelow=1&kmLeftRight=1`, { headers: { Accept: "application/json" } })).json();
+        js.subset.forEach(sub => sub.data.forEach(v => { if (v > -2000) vals.push(v * 0.0001); }));
+      }));
+      return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+    } catch { return null; }
+  }
+
+  // ---------- reverse twin: which Moon/Mars site does this Earth place resemble? ----------
+  function reverseTwins(site) {
+    const w = TW.profileWeights("balanced");
+    return TARGETS.map(t => ({ t, ...TW.compare(site.fp, t, w) })).sort((a, b) => b.score - a.score);
+  }
+  function reverseHtml(site) {
+    const list = reverseTwins(site).slice(0, 3);
+    return `<div class="sec">🔄 ${T().reverse.title}</div><p class="help">${T().reverse.lead}</p>
+      <ul class="twins">${list.map((r, i) => `<li><span class="orb ${r.t.body}"></span><span><b>${esc(short(r.t.name))}</b><small>${r.t.body === "Moon" ? T().moon : T().mars}</small>
+        <span class="bar"><i style="width:${r.score}%;background:${i === 0 ? "var(--target)" : "var(--accent)"}"></i></span></span>
+        <span class="v">${r.score.toFixed(0)}</span><button class="mini-btn" data-peek="${r.t.id}">🔭 ${T().reverse.see}</button></li>`).join("")}</ul>`;
+  }
+  function bindReverse() { document.querySelectorAll("[data-peek]").forEach(b => (b.onclick = () => peek(b.dataset.peek))); }
+
+  function peek(id) {
+    const t = TARGETS.find(x => x.id === id);
+    state.peek = id;
+    globe.polygonsData([]).arcsData([]);
+    setTexture(t.body);
+    globe.pointsData([{ lat: t.lat, lng: t.lon, alt: 0.02, r: 1.1, color: "#ff9b47", label: esc(t.name) }]);
+    globe.htmlElementsData([{ lat: t.lat, lng: t.lon, alt: 0.03, el: labelEl(short(t.name), "win") }]);
+    globe.ringsData([{ lat: t.lat, lng: t.lon }]);
+    globe.pointOfView({ lat: Math.abs(t.lat) > 80 ? Math.sign(t.lat) * 70 : t.lat, lng: t.lon, altitude: 1.5 }, 1400);
+    let bar = $("#peekBar");
+    if (!bar) { bar = document.createElement("div"); bar.id = "peekBar"; bar.className = "peekbar"; document.body.appendChild(bar); }
+    bar.innerHTML = `<span>🔭 ${T().reverse.viewing(esc(short(t.name)))}</span><button class="btn" id="unpeek">${T().reverse.backEarth}</button>`;
+    bar.hidden = false;
+    $("#unpeek").onclick = () => unpeek(true);
+  }
+  function unpeek(redraw) {
+    state.peek = null;
+    const bar = $("#peekBar"); if (bar) bar.hidden = true;
+    if (!redraw) return;
+    if (state.stage === "earth") showEarthMode(true);
+    else if (state.tab === "map") drawHeatmap();
+    else if (state.tab === "camp") renderVerdictPanel();
+    else showEarthResults(rank(), true);
+  }
+
+  // ---------- "start from Earth" mode ----------
+  function showEarthMode(focus) {
+    setTexture("Earth");
+    const sc = state.scan;
+    globe.polygonsData([]).arcsData([]);
+    globe.pointsData(CURATED.map(s => ({ lat: s.lat, lng: s.lon, alt: 0.02, r: 0.45, color: "#36c2b4", label: `<b>${esc(s.name)}</b>`,
+      onClick: () => { state.scan = s; renderEarthPanel(); showEarthMode(true); } })));
+    globe.htmlElementsData(sc ? [{ lat: sc.lat, lng: sc.lon, alt: 0.02, el: labelEl(sc.name.split(" – ")[0], "win") }] : []);
+    globe.ringsData(sc ? [{ lat: sc.lat, lng: sc.lon }] : []);
+    if (focus) globe.pointOfView(sc ? { lat: sc.lat, lng: sc.lon, altitude: 1.6 } : { lat: 0, lng: -70, altitude: 2.2 }, 1200);
+  }
+  function renderEarthPanel() {
+    const sc = state.scan, E = T().earth;
+    let body = `<p class="help">${E.pick}</p>`;
+    if (state.scanBusy) body = `<div class="scanbox busy">${T().scanning}</div>`;
+    else if (sc) {
+      const best = reverseTwins(sc)[0];
+      body = `<div class="scanbox"><b>📍 ${esc(sc.name)}</b><br><small class="help">${esc(sc.country)}${sc.elev != null ? ` · ${Math.round(sc.elev)} m` : ""}</small>
+        ${reverseHtml(sc)}
+        <div class="radar-wrap"><canvas id="radar"></canvas></div></div>`;
+      setTimeout(() => { if ($("#radar")) drawRadar(sc, best.t); }, 0);
+    }
+    $("#panel").innerHTML = `<div class="p-body"><h2 class="p-title">🌍 ${E.title}</h2><p class="p-sub">${E.help}</p>${body}</div>
+      <div class="p-foot"><button class="btn ghost" id="backBtn">${T().back}</button><button class="btn" id="toMission">${E.toMission}</button></div>`;
+    $("#backBtn").onclick = goHome;
+    $("#toMission").onclick = () => {
+      const t = sc ? reverseTwins(sc)[0].t : TARGETS[0];
+      if (state.peek) unpeek(false);
+      state.scan = null; go("dest"); pickTarget(t.id);
+    };
+    bindReverse();
+  }
+
+  // ---------- global heat map (NASA POWER on a 3° land grid) ----------
+  let gridCache = null;
+  function gridCells() {
+    if (gridCache) return gridCache;
+    const G = window.TW_GRID;
+    if (!G) return null;
+    gridCache = G.rows.map(r => {
+      const pw = {}; G.cols.forEach((c, i) => (pw[c] = r[i]));
+      return { lat: pw.lat, lon: pw.lon, fp: TW.climateFromPower(pw, null), power: pw };
+    });
+    return gridCache;
+  }
+  function gridScores() {
+    const cells = gridCells(); if (!cells) return null;
+    const t = target(), w = weights(), wc = {};
+    KEYS.forEach(k => (wc[k] = CLIMATE_KEYS.includes(k) ? w[k] : 0));
+    return cells.map(c => ({ ...c, score: TW.compare(c.fp, t, wc).score }));
+  }
+  function distKm(a, b) {
+    const r = Math.PI / 180, x = Math.sin(a.lat * r) * Math.sin(b.lat * r) + Math.cos(a.lat * r) * Math.cos(b.lat * r) * Math.cos((a.lon - b.lon) * r);
+    return 6371 * Math.acos(Math.min(1, Math.max(-1, x)));
+  }
+  function hotspots(scored, n = 5) {
+    const out = [];
+    for (const c of scored.slice().sort((a, b) => b.score - a.score)) {
+      if (CURATED.some(s => distKm(c, s) < 700)) continue; // already catalogued nearby
+      if (out.some(o => distKm(c, o) < 900)) continue;     // keep the list geographically diverse
+      out.push(c);
+      if (out.length >= n) break;
+    }
+    return out;
+  }
+  function drawHeatmap() {
+    const scored = gridScores(); if (!scored) return null;
+    const h = (window.TW_GRID.step || 3) / 2;
+    const lo = Math.min(...scored.map(c => c.score)), hi = Math.max(...scored.map(c => c.score));
+    globe.polygonsData(scored.map(c => ({
+      geometry: { type: "Polygon", coordinates: [[[c.lon - h, c.lat - h], [c.lon + h, c.lat - h], [c.lon + h, c.lat + h], [c.lon - h, c.lat + h], [c.lon - h, c.lat - h]]] },
+      cap: scoreColor(c.score, lo + (hi - lo) * 0.25, hi).replace("rgb", "rgba").replace(")", ",0.78)"),
+      alt: 0.004 + 0.05 * TW.clamp((c.score - lo) / (hi - lo || 1)) ** 3,
+      label: `${T().twinScore}: ${c.score.toFixed(0)}<br>${c.lat.toFixed(1)}°, ${c.lon.toFixed(1)}° · ${c.power.t2m.toFixed(1)} °C · ${(c.power.precip * 365).toFixed(0)} mm`,
+      onClick: () => { state.tab = "scan"; renderVerdictPanel(); globe.polygonsData([]); scanPoint(c.lat, c.lon); },
+    })));
+    globe.pointsData(CURATED.map(s => ({ lat: s.lat, lng: s.lon, alt: 0.06, r: 0.25, color: "#ffffff", label: esc(s.name), onClick: () => selectSite(s.id) })));
+    globe.ringsData([]).arcsData([]).htmlElementsData([]);
+    return scored;
+  }
+  function tabMap() {
+    const M = T().map;
+    if (!window.TW_GRID) { $("#tabBody").innerHTML = `<p class="help">${M.missing}</p>`; return; }
+    const scored = drawHeatmap();
+    const hs = hotspots(scored);
+    $("#tabBody").innerHTML = `<h2 class="p-title">🔥 ${M.title}</h2><p class="p-sub">${M.lead(scored.length, window.TW_GRID.step)}</p>
+      <div class="legend-bar"><span>${Math.round(Math.min(...scored.map(c => c.score)))}</span><i style="background:linear-gradient(90deg,${STOPS.join(",")})"></i><span>${Math.round(Math.max(...scored.map(c => c.score)))}</span></div>
+      <p class="help">${M.climateOnly}</p>
+      <div class="sec">💎 ${M.hotspots}</div>
+      <ol class="rank" id="hotList">${hs.map((c, i) => `<li data-i="${i}"><div><b id="hs${i}">${c.lat.toFixed(1)}°, ${c.lon.toFixed(1)}°</b><small>${c.power.t2m.toFixed(1)} °C · ${(c.power.precip * 365).toFixed(0)} mm/${state.lang === "es" ? "año" : "yr"} · ${c.power.ps.toFixed(0)} kPa</small></div><span class="v">${c.score.toFixed(0)}</span></li>`).join("")}</ol>`;
+    document.querySelectorAll("#hotList li").forEach(li => (li.onclick = () => { const c = hs[+li.dataset.i]; globe.pointOfView({ lat: c.lat, lng: c.lon, altitude: 1.3 }, 1200); globe.ringsData([{ lat: c.lat, lng: c.lon }]); }));
+    globe.pointOfView({ lat: hs[0]?.lat ?? 0, lng: hs[0]?.lon ?? 0, altitude: 2.4 }, 1400);
+    hs.forEach((c, i) => placeName(c.lat, c.lon).then(n => { const el = $("#hs" + i); if (el && n) el.textContent = `${n} (${c.lat.toFixed(1)}°, ${c.lon.toFixed(1)}°)`; }));
+  }
+  const placeCache = {};
+  async function placeName(lat, lon) {
+    const k = `${lat},${lon},${state.lang}`;
+    if (k in placeCache) return placeCache[k];
+    try {
+      const j = await (await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=${state.lang}`)).json();
+      return (placeCache[k] = [j.principalSubdivision, j.countryName].filter(Boolean).join(", ") || null);
+    } catch { return null; }
   }
 
   // ---------- exports ----------
@@ -491,6 +655,7 @@ _TwinWorlds · NASA Space Apps 2026 · ${new Date().toISOString().slice(0, 10)}_
   // ---------- boot ----------
   $("#startBtn").onclick = () => { go("dest"); ctl.autoRotate = false; showTargetsOnGlobe(); globe.pointOfView({ lat: -20, lng: 20, altitude: 2.4 }, 1200); };
   $("#homeBtn").onclick = goHome;
+  $("#earthBtn").onclick = () => { state.scan = null; state.targetId = null; ctl.autoRotate = false; go("earth"); showEarthMode(true); };
   document.querySelectorAll("#lang button").forEach(b => (b.onclick = () => {
     state.lang = b.dataset.l; renderChrome(); renderPanel();
     if (state.stage === "verdict" && state.tab !== "camp") showEarthResults(rank(), false);

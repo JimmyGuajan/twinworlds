@@ -16,10 +16,12 @@ TwinWorlds measures every place on the same 15 axes using open NASA data:
 
 A guided 3D experience lets a planner pick a Moon or Mars base site and a mission goal, then "launch". A mission computer runs the analysis, a ship flies to Earth, and it lands on the best twin with an explained verdict: why the site was chosen and what it cannot simulate.
 
-TwinWorlds also does three more things:
+TwinWorlds also does five more things:
+- It paints a **global heat map** of the whole land surface and lists the most promising **uncatalogued zones**.
 - It surfaces **untapped analogs** nobody uses yet.
 - It builds **3-site campaigns** that cover 89–96% of a target.
-- It **fingerprints any clicked point on Earth live**.
+- It **fingerprints any clicked point on Earth live**, including MODIS vegetation.
+- Its **reverse twin** mode tells you which Moon or Mars site any Earth place resembles.
 
 ## Links
 - Demo: https://jimmyguajan.github.io/twinworlds/
@@ -47,7 +49,10 @@ TwinWorlds also does three more things:
 4. **Similarity.** The score is 100 × (1 − weighted RMS distance), with weights set by the mission profile.
 5. **Untapped analogs.** The opportunity score is similarity × (1 − 0.75 × current usage).
 6. **Campaign builder.** A greedy weighted max-coverage pass picks 3 complementary sites. The coverage gap shows what Earth cannot reproduce.
-7. **Live scan.** The browser calls NASA POWER (CORS-enabled) and the DEM for any clicked point.
+7. **Live scan.** The browser calls NASA POWER (CORS-enabled), the DEM and the ORNL DAAC MODIS service for any clicked point.
+8. **Vegetation.** MODIS Terra MOD13Q1 NDVI (250 m), averaged over four 2023 seasonal composites in a 4 km window, replaces the literature value of the "no vegetation" axis.
+9. **Global heat map.** NASA POWER regional climatology for every 10°×10° land box, thinned to a 2.5° grid. Hotspots are the best-scoring cells more than 700 km from any catalogued analog.
+10. **Reverse twin.** An Earth fingerprint is compared against all 9 targets with balanced weights.
 
 **Benefits**
 - Mission teams get a quantitative, explainable reason to choose a test site, and they know what it *cannot* test.
@@ -76,6 +81,7 @@ Analog selection becomes a recommender problem with measured, comparable fingerp
 ## NASA data used
 - NASA POWER Climatology API (2001–2025): https://power.larc.nasa.gov
 - LRO LOLA LDEM_16; MGS MOLA MEGDR; LRO Diviner Polar Resource Product; Mars Odyssey GRS/NS epithermal map, all from the PDS Geosciences Node: https://pds-geosciences.wustl.edu
+- MODIS Terra MOD13Q1 NDVI through the ORNL DAAC MODIS Web Service: https://modis.ornl.gov/data/modis_webservice.html
 - NASA GIBS (Blue Marble): https://gibs.earthdata.nasa.gov
 - NASA Moon Trek and Mars Trek (LRO WAC mosaic, Viking MDIM 2.1): https://trek.nasa.gov
 - Mission measurements cited: MRO SHARAD, MSL REMS and RAD, Mars 2020 MEDA, LADEE, LCROSS, LRO CRaTER, LRO Mini-RF

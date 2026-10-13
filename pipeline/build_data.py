@@ -162,6 +162,18 @@ def merge_planetary(targets):
         t["prov"] = prov
 
 
+def merge_ndvi(sites):
+    """Measured vegetation (MODIS MOD13Q1 NDVI via ORNL DAAC, see pipeline/ndvi.py) replaces the curated 'barren' axis."""
+    path = DATA / "ndvi_cache.json"
+    cache = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+    for s in sites:
+        ndvi = cache.get(f"{s['lat']},{s['lon']}")
+        s["barren_curated"] = s.get("barren")
+        if ndvi is not None:  # MODIS has no data over e.g. the Antarctic ice sheet -> keep the literature value
+            s["ndvi"] = round(ndvi, 3)
+            s["barren"] = round(min(max((0.5 - ndvi) / 0.4, 0), 1), 3)
+
+
 def main():
     refresh = "--refresh" in sys.argv
     sites = json.loads((DATA / "earth_sites.json").read_text(encoding="utf-8"))["sites"]
@@ -177,9 +189,17 @@ def main():
             time.sleep(0.5)
         s["power"] = cache[key]
 
-    for s, e in zip(sites, fetch_elevations(sites)):
-        s["elev"] = e
+    elev_path = DATA / "elev_cache.json"
+    elev = json.loads(elev_path.read_text(encoding="utf-8")) if elev_path.exists() else {}
+    missing = [s for s in sites if f"{s['lat']},{s['lon']}" not in elev]
+    if missing:
+        for s, e in zip(missing, fetch_elevations(missing)):
+            elev[f"{s['lat']},{s['lon']}"] = e
+        elev_path.write_text(json.dumps(elev, indent=1), encoding="utf-8")
+    for s in sites:
+        s["elev"] = elev[f"{s['lat']},{s['lon']}"]
     earth_relief(sites)
+    merge_ndvi(sites)
     merge_planetary(targets)
 
     payload = {

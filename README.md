@@ -29,7 +29,10 @@ The interface is available in Spanish and English.
 | **Mission-aware scoring** | Weights depend on what you are testing. |
 | **Untapped analog finder** | Opportunity = similarity × (1 − current analog usage). It surfaces places nobody has used yet. |
 | **Analog Campaign Builder** | A greedy set-cover picks 3 complementary sites that cover 89–96% of the target, against about 60–70% for the best single site. |
-| **Live scan** | Click anywhere and the app queries NASA POWER and the DEM in the browser and fingerprints the point in seconds. |
+| **Live scan** | Click anywhere and the app queries NASA POWER, the DEM and MODIS NDVI in the browser and fingerprints the point in seconds (8 of 15 axes measured live). |
+| **🔥 Global heat map** | The whole land surface is scored on a 2.5° grid of NASA POWER climatology (`pipeline/global_grid.py`). Bright = alike. The app lists the most promising **uncatalogued zones**: the best cells more than 700 km from any known analog, which are candidates for *new* analogs. |
+| **🌿 Measured vegetation** | The "no vegetation" axis comes from MODIS Terra MOD13Q1 NDVI (250 m, ORNL DAAC web service) for every site and every live scan (`pipeline/ndvi.py`). |
+| **🔄 Reverse twin** | Start from Earth: tap any place (or a catalog site) and the app tells you which Moon or Mars site it most resembles, then flies the globe there. |
 
 ## Key findings
 - **Lunar lava-tube base (Mare Tranquillitatis pit):** the best twin is **Harrat Khaybar and the Umm Jirsan lava tube** (Saudi Arabia), a hyperarid basaltic field almost never used as an analog.
@@ -61,6 +64,16 @@ python pipeline/textures.py
 ```
 This builds the globe textures from NASA GIBS and NASA Trek.
 
+```bash
+python pipeline/ndvi.py
+```
+This fetches MODIS NDVI for the catalog sites. Run `build_data.py` afterwards so the values are merged.
+
+```bash
+python pipeline/global_grid.py
+```
+This builds the global heat-map grid from the NASA POWER regional API. It is resumable and polite, and takes about 30 minutes.
+
 ## Project layout
 ```
 index.html               UI shell
@@ -90,10 +103,11 @@ docs/SUBMISSION.md       Space Apps project text and 30-s video script
 
 ## Honest limitations
 - **What is measured:**
-  - Earth sites: 6 climate axes and relief.
+  - Earth sites: 6 climate axes, relief and vegetation (MODIS NDVI; Antarctic ice sites keep a literature value because MODIS has no data there).
   - Targets: relief, ice, seasonal light and polar cold.
   - Mission measurements fix the saturating axes (vacuum, cold, radiation).
-- **What is estimated:** basalt, regolith, impact, caves, salts, sediments and vegetation are literature-based estimates (v0.1), and the app labels them that way.
+- **What is estimated:** basalt, regolith, impact, caves, salts and sediments are literature-based estimates (v0.1), and the app labels them that way.
+- **Global heat map:** it uses only the 6 climate axes, so it is a first screening. Tapping a cell runs the full live scan.
 - **Odyssey neutrons:** they sense only the top ~1 m, with a footprint of hundreds of km.
 - **NASA POWER resolution:** its grid is about 0.5°, which smooths out microclimates.
 - **Lunar seasons:** the Moon's 14-day night is not a seasonal effect, so the "seasonal light" axis does not capture it.
@@ -119,6 +133,8 @@ docs/SUBMISSION.md       Space Apps project text and 30-s video script
 - Ver por qué se eligió el sitio y qué no puede simular.
 - Revisar la evidencia de cada número.
 - Armar una campaña de 3 sitios que cubre el 89–96% del objetivo.
-- Escanear en vivo cualquier punto del planeta.
+- Escanear en vivo cualquier punto del planeta (clima, relieve y vegetación MODIS).
+- Ver un **mapa de calor de toda la Tierra** con las zonas más parecidas que nadie ha catalogado.
+- Usar el **gemelo inverso**: empiezas desde un lugar de la Tierra y te dice a qué sitio de la Luna o Marte se parece.
 
 **Ecuador:** Sierra Negra y Fernandina (Galápagos) están en el top 10 mundial de análogos de tubos de lava. El Arenal del Chimborazo es el #3 de los análogos sin explotar para el hielo de Arcadia Planitia.
