@@ -272,6 +272,7 @@
   }
 
   let radar = null;
+  const helpOpen = new Set(); // tabs whose "?" help box the user has opened
   function renderVerdictPanel() {
     const p = $("#panel"), t = target();
     const tabs = ["verdict", "top", "camp", "evidence", "scan"];
@@ -289,6 +290,10 @@
     const results = rank();
     $("#cardBtn").onclick = () => exportCard(results.find(r => r.site.id === state.selectedId) || results[0]);
     ({ verdict: tabVerdict, top: tabTop, camp: tabCamp, evidence: tabEvidence, scan: tabScan })[state.tab](results, t);
+    const tab = state.tab;
+    $("#tabBody").insertAdjacentHTML("afterbegin",
+      `<details class="about" ${helpOpen.has(tab) ? "open" : ""}><summary>❓ ${T().helpQ}</summary><p>${T().help[tab]}</p></details>`);
+    $("#tabBody .about").addEventListener("toggle", e => (e.target.open ? helpOpen.add(tab) : helpOpen.delete(tab)));
   }
 
   function tabVerdict(results, t) {
