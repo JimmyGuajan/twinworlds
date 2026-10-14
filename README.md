@@ -48,6 +48,11 @@ python -m http.server 8765
 ```
 Then open http://localhost:8765. Deep links work too, for example `#t=moon_shackleton&p=power&m=match`, which opens straight on a verdict for demos.
 
+After changing any CSS/JS file, bump the `?v=` number on the `<link>`/`<script>` tags in `index.html` so browsers don't keep an old cached copy:
+```bash
+V=$(date +%Y%m%d%H%M); sed -i -E "s#(css/styles\.css|js/[a-z]+\.js)(\?v=[0-9]+)?\"#?v=$V\"#g" index.html
+```
+
 ## Rebuild the datasets
 ```bash
 python pipeline/planetary.py
