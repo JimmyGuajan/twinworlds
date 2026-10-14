@@ -315,6 +315,7 @@
     $("#tabBody").innerHTML = `
       <p class="lead">${lead}</p>
       <div class="winner">${ring(r.score)}<div><h2>${esc(s.name)}</h2><div class="country">${esc(s.country)} ${usage}</div></div></div>
+      ${s.scanned ? "" : `<button class="btn place-btn" id="placeBtn">${T().place.btn}</button>`}
       <div class="sec">✅ ${T().why}</div>
       <ul class="reasons">${reasons.map(k => `<li><span class="ic">${ICON[k]}</span><span><b>${FL(k)}</b><small>${esc(earthDetail(k, s))}</small><small>${t.body === "Moon" ? T().moon : T().mars}: ${esc(targetDetail(k, t))}</small></span><span class="pct" style="color:${matchColor(r.per[k])}">${Math.round(r.per[k] * 100)}%</span></li>`).join("") || "<li>—</li>"}</ul>
       <div class="sec">⚠️ ${T().cannot}</div>
@@ -326,6 +327,7 @@
       <div class="chips">${["NASA POWER", "Copernicus DEM", ...new Set(Object.values(t.prov || {}).filter(p => p.kind === "measured").map(p => p.text.split(":")[0]))].map(c => `<span class="chip">${esc(c)}</span>`).join("")}</div>`;
     drawRadar(s, t);
     bindReverse();
+    const pb = $("#placeBtn"); if (pb) pb.onclick = () => openPlace(s, t);
   }
 
   function drawRadar(s, t) {
@@ -526,6 +528,7 @@
     else if (sc) {
       const best = reverseTwins(sc)[0];
       body = `<div class="scanbox"><b>📍 ${esc(sc.name)}</b><br><small class="help">${esc(sc.country)}${sc.elev != null ? ` · ${Math.round(sc.elev)} m` : ""}</small>
+        ${sc.scanned ? "" : `<button class="btn place-btn" id="placeBtn">${T().place.btn}</button>`}
         ${reverseHtml(sc)}
         <div class="radar-wrap"><canvas id="radar"></canvas></div></div>`;
       setTimeout(() => { if ($("#radar")) drawRadar(sc, best.t); }, 0);
@@ -533,6 +536,7 @@
     $("#panel").innerHTML = `<div class="p-body"><h2 class="p-title">🌍 ${E.title}</h2><p class="p-sub">${E.help}</p>${body}</div>
       <div class="p-foot"><button class="btn ghost" id="backBtn">${T().back}</button><button class="btn" id="toMission">${E.toMission}</button></div>`;
     $("#backBtn").onclick = goHome;
+    const pb = $("#placeBtn"); if (pb && sc) pb.onclick = () => openPlace(sc, reverseTwins(sc)[0].t);
     $("#toMission").onclick = () => {
       const t = sc ? reverseTwins(sc)[0].t : TARGETS[0];
       if (state.peek) unpeek(false);
@@ -631,6 +635,57 @@
       return (placeCache[k] = [j.principalSubdivision, j.countryName].filter(Boolean).join(", ") || null);
     } catch { return null; }
   }
+
+  // ---------- "Get to know the place": photo + Wikipedia + same-scale satellite comparison ----------
+  const VIEW_KM = 40;
+  function viewSource(site) {
+    return site.lat < -60 ? "NASA GIBS · MODIS Terra (250 m)" : "NASA GIBS · Landsat WELD (30 m)";
+  }
+  function targetSource(t) {
+    return t.body === "Moon" ? "NASA Moon Trek · LRO WAC (~100 m)" : "NASA Mars Trek · Viking MDIM 2.1 (232 m)";
+  }
+  function openPlace(site, t) {
+    const P = T().place, w = (window.TW_WIKI || {})[site.id] || {};
+    const txt = (state.lang === "es" && w.es) ? w.es : w.en;
+    const ph = w.photo;
+    const world = t.body === "Moon" ? T().moon : T().mars;
+    let m = $("#placeModal");
+    if (!m) { m = document.createElement("div"); m.id = "placeModal"; m.className = "modal"; document.body.appendChild(m); }
+    m.innerHTML = `<div class="modal-card" role="dialog" aria-modal="true" aria-label="${esc(P.title)}">
+      <header class="modal-head"><div><small>${P.title}</small><h2>${esc(site.name)}</h2><span class="help">${esc(site.country)}</span></div>
+        <button class="modal-x" id="placeClose" aria-label="${P.close}">✕</button></header>
+      <div class="modal-body">
+        <div class="place-top">
+          ${ph ? `<figure class="photo"><img src="${esc(ph.src)}" alt="${esc(site.name)}" loading="lazy">
+            <figcaption>📷 ${esc(ph.author)} · ${esc(ph.license)} · <a href="${esc(ph.page)}" target="_blank" rel="noopener">Wikimedia Commons</a></figcaption></figure>`
+            : `<p class="help">${P.noPhoto}</p>`}
+          <div class="wiki">${txt ? `<p>${esc(txt.extract)}</p><a href="${esc(txt.url)}" target="_blank" rel="noopener">${P.read}</a><small>${P.textCredit}</small>` : `<p class="help">${P.noText}</p>`}
+            ${site.note ? `<p class="note">${esc(site.note)}</p>` : ""}</div>
+        </div>
+        <div class="sec">🛰 ${P.compare(esc(site.name.split(" – ")[0]), esc(short(t.name)))}</div>
+        <div class="cmp" id="cmp" style="--pos:50%">
+          <img src="assets/views/target/${t.id}.jpg" alt="${esc(t.name)}">
+          <img class="cmp-earth" src="assets/views/earth/${site.id}.jpg" alt="${esc(site.name)}">
+          <span class="cmp-line"></span>
+          <span class="cmp-tag left">🌍 ${P.earth}</span><span class="cmp-tag right">${t.body === "Moon" ? "🌕" : "🔴"} ${world}</span>
+          <span class="cmp-scale"><i></i>10 km</span>
+          <input type="range" min="0" max="100" value="50" id="cmpRange" aria-label="${esc(P.compare(site.name, t.name))}">
+        </div>
+        <div class="cmp-src"><span>🌍 ${viewSource(site)}</span><span>${t.body === "Moon" ? "🌕" : "🔴"} ${targetSource(t)}</span></div>
+        <p class="help">${P.compareHelp}</p>
+      </div></div>`;
+    m.hidden = false;
+    document.body.classList.add("modal-open");
+    const cmp = $("#cmp");
+    $("#cmpRange").oninput = e => cmp.style.setProperty("--pos", e.target.value + "%");
+    $("#placeClose").onclick = closePlace;
+    m.onclick = e => { if (e.target === m) closePlace(); };
+  }
+  function closePlace() {
+    const m = $("#placeModal"); if (m) m.hidden = true;
+    document.body.classList.remove("modal-open");
+  }
+  addEventListener("keydown", e => { if (e.key === "Escape") closePlace(); });
 
   // ---------- exports ----------
   function download(name, text, type) {

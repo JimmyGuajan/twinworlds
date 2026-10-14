@@ -52,7 +52,8 @@ TwinWorlds also does five more things:
 7. **Live scan.** The browser calls NASA POWER (CORS-enabled), the DEM and the ORNL DAAC MODIS service for any clicked point.
 8. **Vegetation.** MODIS Terra MOD13Q1 NDVI (250 m), averaged over four 2023 seasonal composites in a 4 km window, replaces the literature value of the "no vegetation" axis.
 9. **Global heat map.** NASA POWER regional climatology for every 10°×10° land box, thinned to a 2.5° grid. Hotspots are the best-scoring cells more than 700 km from any catalogued analog.
-10. **Reverse twin.** An Earth fingerprint is compared against all 9 targets with balanced weights.
+10. **Get to know the place.** Each site opens a credited Commons photo and the Wikipedia summary. A slider compares a 40 × 40 km NASA view of the Earth site (Landsat WELD, or MODIS in Antarctica) with the Moon or Mars target (LRO WAC or Viking from NASA Trek). Both are resampled into the same local projection and scale, so the lunar south pole is not distorted.
+11. **Reverse twin.** An Earth fingerprint is compared against all 9 targets with balanced weights.
 
 **Benefits**
 - Mission teams get a quantitative, explainable reason to choose a test site, and they know what it *cannot* test.

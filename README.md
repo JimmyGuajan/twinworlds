@@ -32,6 +32,7 @@ The interface is available in Spanish and English.
 | **Live scan** | Click anywhere and the app queries NASA POWER, the DEM and MODIS NDVI in the browser and fingerprints the point in seconds (8 of 15 axes measured live). |
 | **🔥 Global heat map** | The whole land surface is scored on a 2.5° grid of NASA POWER climatology (`pipeline/global_grid.py`). Bright = alike. The app lists the most promising **uncatalogued zones**: the best cells more than 700 km from any known analog, which are candidates for *new* analogs. |
 | **🌿 Measured vegetation** | The "no vegetation" axis comes from MODIS Terra MOD13Q1 NDVI (250 m, ORNL DAAC web service) for every site and every live scan (`pipeline/ndvi.py`). |
+| **📷 Get to know the place** | A "Get to know the place" window for every site. It shows a Wikimedia Commons photo with author and licence, and the Wikipedia summary (Spanish or English). Below them is a **same-scale slider**: a 40 × 40 km Landsat view of the Earth site against the LRO WAC or Viking view of the target, both in the same local projection with one scale bar (`pipeline/site_views.py`, `pipeline/wiki.py`). |
 | **🔄 Reverse twin** | Start from Earth: tap any place (or a catalog site) and the app tells you which Moon or Mars site it most resembles, then flies the globe there. |
 
 ## Key findings
@@ -73,6 +74,14 @@ This builds the globe textures from NASA GIBS and NASA Trek.
 python pipeline/ndvi.py
 ```
 This fetches MODIS NDVI for the catalog sites. Run `build_data.py` afterwards so the values are merged.
+
+```bash
+python pipeline/site_views.py
+```
+```bash
+python pipeline/wiki.py
+```
+These build the same-scale satellite views (NASA GIBS Landsat/MODIS and NASA Trek) and the photos and summaries (Wikipedia/Commons).
 
 ```bash
 python pipeline/global_grid.py
