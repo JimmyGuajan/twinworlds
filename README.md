@@ -50,7 +50,7 @@ Then open http://localhost:8765. Deep links work too, for example `#t=moon_shack
 
 After changing any CSS/JS file, bump the `?v=` number on the `<link>`/`<script>` tags in `index.html` so browsers don't keep an old cached copy:
 ```bash
-V=$(date +%Y%m%d%H%M); sed -i -E "s#(css/styles\.css|js/[a-z]+\.js)(\?v=[0-9]+)?\"#?v=$V\"#g" index.html
+V=$(date +%Y%m%d%H%M); sed -i -E "s#(css/styles\.css|js/[a-z0-9]+\.js)(\?v=[0-9]+)?\"#?v=$V\"#g" index.html
 ```
 
 ## Rebuild the datasets
